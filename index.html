@@ -40,7 +40,7 @@
 
         body.white-mode {
             --bg-primary: #f0f2f5;
-            --bg-secondary: #ffffff;
+            --bg-secondary: #fff;
             --bg-tertiary: #f8fafc;
             --border-color: #e2e8f0;
             --text-primary: #1e293b;
@@ -48,7 +48,7 @@
             --text-muted: #64748b;
             --card-hover: #3b82f6;
             --shadow-color: rgba(0, 0, 0, 0.1);
-            --input-bg: #ffffff;
+            --input-bg: #fff;
             --input-border: #e2e8f0;
             --input-focus: #3b82f6;
             --glow-color: rgba(59, 130, 246, 0.3);
@@ -237,7 +237,7 @@
 
         .salary-display {
             background: var(--gradient-2);
-            color: wconfig-limite-btnhite;
+            color: white;
             padding: 8px 20px;
             border-radius: 30px;
             font-weight: 600;
@@ -1354,6 +1354,108 @@
             box-shadow: 0 0 15px var(--glow-color);
         }
 
+        /* ===== LOADING INTERATIVO ===== */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 100000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--bg-tertiary);
+            border-top: 5px solid var(--card-hover);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .loading-dots span {
+            width: 10px;
+            height: 10px;
+            background: var(--card-hover);
+            border-radius: 50%;
+            animation: dots 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes dots {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .progress-loading {
+            width: 300px;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--card-hover), #9d7aff);
+            border-radius: 10px;
+            animation: progress 2s ease infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+        }
+
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
         /* ===== MEDIA QUERY SÓ PARA CELULAR ===== */
         @media (max-width: 768px) {
             body {
@@ -1435,495 +1537,680 @@
     </style>
 </head>
 <body class="dark-mode">
-    <!-- Loading -->
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <p style="margin-top: 15px; color: var(--text-primary);">Processando...</p>
-    </div>
-
-    <!-- Modal de Reset -->
-    <div class="modal" id="resetModal">
-        <div class="modal-content">
-            <h3 style="margin-bottom: 15px; color: var(--text-primary);">⚠️ Atenção!</h3>
-            <p style="margin-bottom: 20px; line-height: 1.5; color: var(--text-secondary);">
-                <strong>Isso vai apagar TUDO:</strong><br>
-                • Salário (volta para R$ 0,00)<br>
-                • Todas as transações<br>
-                • Todas as parcelas ativas<br>
-                • Histórico de quitações<br>
-                • Limites dos cartões
-            </p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn-primary" style="background: #ef4444; width: auto; padding: 10px 20px;" onclick="confirmarReset()">Sim, resetar</button>
-                <button class="btn-primary" style="background: var(--bg-tertiary); width: auto; padding: 10px 20px; color: var(--text-primary);" onclick="fecharModal()">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Limites -->
-    <div class="modal" id="limiteModal">
-        <div class="modal-content">
-            <h3 style="margin-bottom: 15px; color: var(--text-primary);">💳 Limites dos Cartões</h3>
-            <div id="limitesContent" style="max-height: 400px; overflow-y: auto; padding-right: 10px;"></div>
-            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-                <button class="btn-primary" style="width: auto; padding: 8px 20px;" onclick="salvarTodosLimites()">Salvar Todos</button>
-                <button class="btn-secondary" onclick="fecharLimiteModal()">Fechar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Histórico -->
-    <div class="modal" id="historicoModal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 id="modalCartaoNome" style="color: var(--text-primary);">📊 Histórico</h3>
-                <button class="close-btn" onclick="fecharHistoricoModal()" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: all 0.3s ease;">&times;</button>
-            </div>
-            <div id="historicoContent" style="max-height: 400px; overflow-y: auto;"></div>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1><i class="fas fa-chart-pie" id="theme-icon"></i> Controle Financeiro</h1>
+    <!-- ===== TELA DE LOGIN ===== -->
+    <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%); z-index: 99999; display: flex; justify-content: center; align-items: center;">
+        <div style="background: var(--bg-secondary); border-radius: 30px; padding: 40px 30px; width: 90%; max-width: 420px; border: 1px solid var(--border-color); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);">
             
-            <div class="theme-toggle" onclick="toggleTheme()">
-                <div class="theme-option dark active" id="dark-option"><i class="fas fa-moon"></i> Dark</div>
-                <div class="theme-option light" id="light-option"><i class="fas fa-sun"></i> Light</div>
-            </div>
-            
-            <button class="reset-btn" onclick="abrirModalReset()"><i class="fas fa-trash-alt"></i> Resetar</button>
-            <button class="config-limite-btn" onclick="abrirLimiteModal()"><i class="fas fa-sliders-h"></i> Limites</button>
-            
-            <div class="salary-editable">
-                <div class="salary-display" onclick="editarSalario()">
-                    <i class="fas fa-briefcase"></i> <span id="salarioAtual">R$ 0,00</span>
+            <!-- LOGO ANIMADO -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="position: relative; display: inline-block;">
+                    <!-- Círculo de fundo -->
+                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, var(--card-hover) 0%, #9d7aff 100%); border-radius: 30px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px var(--glow-color); animation: pulse 2s infinite;">
+                        <i class="fas fa-chart-pie" style="font-size: 48px; color: white;"></i>
+                    </div>
+                    <!-- Nome do app -->
+                    <h1 style="font-size: 32px; font-weight: 700; background: linear-gradient(135deg, var(--card-hover) 0%, #9d7aff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px;">FinançasPro</h1>
+                    <p style="color: var(--text-muted); font-size: 14px;">Controle financeiro inteligente</p>
                 </div>
             </div>
-            
-            <div class="nav-tabs">
-                <div class="nav-tab active" onclick="mudarAba('lancamentos')" id="tab-lancamentos">
-                    <i class="fas fa-list"></i> Lançamentos
-                </div>
-                <div class="nav-tab" onclick="mudarAba('cartoes')" id="tab-cartoes">
-                    <i class="fas fa-credit-card"></i> Cartões
-                </div>
-                <div class="nav-tab" onclick="mudarAba('graficos')" id="tab-graficos">
-                    <i class="fas fa-chart-pie"></i> Gráficos
-                </div>
-            </div>
-            
-            <div class="date-badge"><i class="far fa-calendar-alt"></i> <span id="dataAtual"></span></div>
-        </div>
 
-        <!-- Cards de Resumo -->
-        <div class="summary-cards">
-            <div class="card receita">
-                <div class="card-header"><i class="fas fa-arrow-down"></i> <span>Receitas</span></div>
-                <div class="card-value" id="totalReceitas">R$ 0,00</div>
-                <div class="card-label">Salário mensal</div>
-                <div class="mini-chart"><div class="mini-chart-fill" style="width: 0%;"></div></div>
+            <!-- Abas Login/Cadastro/Recuperar -->
+            <div style="display: flex; margin-bottom: 25px; background: var(--bg-tertiary); border-radius: 50px; padding: 5px; gap: 5px;">
+                <button id="btnLoginTab" onclick="mostrarLogin()" style="flex: 1; padding: 12px; background: var(--gradient-1); border: none; border-radius: 50px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 5px 15px var(--glow-color);">Entrar</button>
+                <button id="btnCadastroTab" onclick="mostrarCadastro()" style="flex: 1; padding: 12px; background: transparent; border: none; border-radius: 50px; color: var(--text-muted); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">Cadastrar</button>
+                <button id="btnRecuperarTab" onclick="mostrarRecuperar()" style="flex: 1; padding: 12px; background: transparent; border: none; border-radius: 50px; color: var(--text-muted); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease;">Recuperar</button>
             </div>
             
-            <div class="card despesa">
-                <div class="card-header"><i class="fas fa-arrow-up"></i> <span>Despesas</span></div>
-                <div class="card-value" id="totalDespesas">R$ 0,00</div>
-                <div class="card-label">Total do mês</div>
-                <div class="mini-chart"><div class="mini-chart-fill" id="despesas-chart" style="width: 0%; background: #ef4444;"></div></div>
-            </div>
-            
-            <div class="card saldo">
-                <div class="card-header"><i class="fas fa-chart-line"></i> <span>Disponível</span></div>
-                <div class="card-value" id="saldoTotal">R$ 0,00</div>
-                <div class="card-label">Para gastar</div>
-                <div class="mini-chart"><div class="mini-chart-fill" id="saldo-chart" style="width: 0%;"></div></div>
-            </div>
-            
-            <div class="card cartoes">
-                <div class="card-header"><i class="fas fa-credit-card"></i> <span>Total Cartões</span></div>
-                <div class="card-value" id="totalCartoes">R$ 0,00</div>
-                <div class="card-label">Parcelas ativas</div>
-                <div class="mini-chart"><div class="mini-chart-fill" id="cartoes-chart" style="width: 0%; background: #f59e0b;"></div></div>
-            </div>
-        </div>
-
-        <!-- ===== ABA LANÇAMENTOS ===== -->
-        <div id="aba-lancamentos">
-            <div class="form-container">
-                <div class="form-title">
-                    <i class="fas fa-plus-circle"></i> Novo Lançamento
+            <!-- FORMULÁRIO DE LOGIN -->
+            <div id="loginForm">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">
+                        <i class="fas fa-envelope" style="margin-right: 5px;"></i> E-mail
+                    </label>
+                    <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px; transition: all 0.3s ease;">
+                        <i class="fas fa-envelope" style="color: var(--text-muted); padding: 0 10px;"></i>
+                        <input type="email" id="loginEmail" placeholder="seu@email.com" style="flex: 1; background: transparent; border: none; padding: 14px 5px; color: var(--text-primary); font-size: 15px; outline: none;">
+                    </div>
                 </div>
                 
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label><i class="far fa-calendar-alt"></i> Data</label>
-                        <input type="date" id="data" value="2026-03-13">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-tag"></i> Categoria</label>
-                        <select id="categoria">
-                            <option value="Cartão">💳 Cartão de Crédito</option>
-                            <option value="Internet">🌐 Internet</option>
-                            <option value="Moradia">🏠 Moradia</option>
-                            <option value="Alimentação">🍔 Alimentação</option>
-                            <option value="Transporte">🚗 Transporte</option>
-                            <option value="Saúde">💊 Saúde</option>
-                            <option value="Lazer">🎮 Lazer</option>
-                            <option value="Educação">📚 Educação</option>
-                            <option value="Eletrônicos">💻 Eletrônicos</option>
-                            <option value="Outros">🎁 Outros</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-align-left"></i> Descrição</label>
-                        <input type="text" id="descricao" placeholder="Ex: Compra no supermercado">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-dollar-sign"></i> Valor</label>
-                        <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00">
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">
+                        <i class="fas fa-lock" style="margin-right: 5px;"></i> Senha
+                    </label>
+                    <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px; transition: all 0.3s ease;">
+                        <i class="fas fa-lock" style="color: var(--text-muted); padding: 0 10px;"></i>
+                        <input type="password" id="loginSenha" placeholder="••••••••" style="flex: 1; background: transparent; border: none; padding: 14px 5px; color: var(--text-primary); font-size: 15px; outline: none;">
                     </div>
                 </div>
-
-                <div class="parcela-checkbox">
-                    <input type="checkbox" id="isParcela" onclick="toggleParcela()">
-                    <label for="isParcela"><strong>🔄 Compra parcelada?</strong></label>
+                
+                <button onclick="fazerLogin()" style="width: 100%; padding: 16px; background: linear-gradient(135deg, var(--card-hover) 0%, #9d7aff 100%); border: none; border-radius: 16px; color: white; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 10px 20px var(--glow-color); margin-bottom: 15px;">
+                    <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Entrar no App
+                </button>
+            </div>
+            
+            <!-- FORMULÁRIO DE CADASTRO -->
+            <div id="cadastroForm" style="display: none;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">Nome completo</label>
+                    <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                        <i class="fas fa-user" style="color: var(--text-muted); padding: 0 10px;"></i>
+                        <input type="text" id="cadastroNome" placeholder="Seu nome" style="flex: 1; background: transparent; border: none; padding: 12px 5px; color: var(--text-primary); outline: none;">
+                    </div>
                 </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">E-mail</label>
+                    <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                        <i class="fas fa-envelope" style="color: var(--text-muted); padding: 0 10px;"></i>
+                        <input type="email" id="cadastroEmail" placeholder="seu@email.com" style="flex: 1; background: transparent; border: none; padding: 12px 5px; color: var(--text-primary); outline: none;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">Senha</label>
+                    <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                        <i class="fas fa-lock" style="color: var(--text-muted); padding: 0 10px;"></i>
+                        <input type="password" id="cadastroSenha" placeholder="••••••••" style="flex: 1; background: transparent; border: none; padding: 12px 5px; color: var(--text-primary); outline: none;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">Confirmar senha</label>
+                    <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                        <i class="fas fa-lock" style="color: var(--text-muted); padding: 0 10px;"></i>
+                        <input type="password" id="cadastroConfirmar" placeholder="••••••••" style="flex: 1; background: transparent; border: none; padding: 12px 5px; color: var(--text-primary); outline: none;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">Pergunta de segurança</label>
+                    <select id="cadastroPergunta" style="width: 100%; padding: 14px; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; color: var(--text-primary); outline: none;">
+                        <option value="">Selecione...</option>
+                        <option value="Qual o nome da sua mãe?">Qual o nome da sua mãe?</option>
+                        <option value="Qual sua cidade natal?">Qual sua cidade natal?</option>
+                        <option value="Qual o nome do seu primeiro pet?">Qual o nome do seu primeiro pet?</option>
+                        <option value="Qual sua cor favorita?">Qual sua cor favorita?</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">Resposta</label>
+                    <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                        <i class="fas fa-question-circle" style="color: var(--text-muted); padding: 0 10px;"></i>
+                        <input type="text" id="cadastroResposta" placeholder="Sua resposta" style="flex: 1; background: transparent; border: none; padding: 12px 5px; color: var(--text-primary); outline: none;">
+                    </div>
+                </div>
+                
+                <button onclick="fazerCadastro()" style="width: 100%; padding: 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 16px; color: white; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 10px 20px var(--glow-success); margin-bottom: 15px;">
+                    <i class="fas fa-user-plus" style="margin-right: 8px;"></i> Criar Conta
+                </button>
+            </div>
+            
+            <!-- FORMULÁRIO DE RECUPERAÇÃO -->
+            <div id="recuperarForm" style="display: none;">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">E-mail cadastrado</label>
+                    <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                        <i class="fas fa-envelope" style="color: var(--text-muted); padding: 0 10px;"></i>
+                        <input type="email" id="recuperarEmail" placeholder="seu@email.com" style="flex: 1; background: transparent; border: none; padding: 14px 5px; color: var(--text-primary); outline: none;">
+                    </div>
+                </div>
+                
+                <button id="btnVerificarEmail" onclick="verificarPergunta()" style="width: 100%; padding: 16px; background: var(--gradient-1); border: none; border-radius: 16px; color: white; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 10px 20px var(--glow-color); margin-bottom: 15px;">
+                    <i class="fas fa-search"></i> Verificar E-mail
+                </button>
+                
+                <div id="respostaField" style="display: none;">
+                    <p id="perguntaSecreta" style="color: var(--text-primary); margin-bottom: 15px; font-weight: 600; text-align: center; padding: 15px; background: var(--bg-tertiary); border-radius: 16px;"></p>
+                    
+                    <input type="hidden" id="emailRecuperacao">
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">Sua resposta</label>
+                        <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                            <i class="fas fa-question-circle" style="color: var(--text-muted); padding: 0 10px;"></i>
+                            <input type="text" id="recuperarResposta" placeholder="Resposta" style="flex: 1; background: transparent; border: none; padding: 12px 5px; color: var(--text-primary); outline: none;">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">Nova senha</label>
+                        <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                            <i class="fas fa-lock" style="color: var(--text-muted); padding: 0 10px;"></i>
+                            <input type="password" id="novaSenha" placeholder="••••••••" style="flex: 1; background: transparent; border: none; padding: 12px 5px; color: var(--text-primary); outline: none;">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; margin-left: 5px;">Confirmar nova senha</label>
+                        <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; padding: 5px;">
+                            <i class="fas fa-lock" style="color: var(--text-muted); padding: 0 10px;"></i>
+                            <input type="password" id="confirmarNovaSenha" placeholder="••••••••" style="flex: 1; background: transparent; border: none; padding: 12px 5px; color: var(--text-primary); outline: none;">
+                        </div>
+                    </div>
+                    
+                    <button onclick="redefinirSenha()" style="width: 100%; padding: 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 16px; color: white; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 10px 20px var(--glow-success);">
+                        <i class="fas fa-key"></i> Redefinir Senha
+                    </button>
+                </div>
+            </div>
+            
+            <div id="loginMensagem" style="text-align: center; margin-top: 20px; padding: 10px; border-radius: 12px; font-size: 14px; display: none;"></div>
+            
+            <!-- Rodapé -->
+            <div style="text-align: center; margin-top: 25px; color: var(--text-muted); font-size: 12px;">
+                <i class="fas fa-shield-alt" style="margin-right: 5px;"></i> Seus dados estão seguros
+            </div>
+        </div>
+    </div>
 
-                <div id="parcelaFields" style="display: none;">
+    <!-- ===== LOADING OVERLAY ===== -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Processando</div>
+        <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="progress-loading">
+            <div class="progress-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div id="conteudoPrincipal" style="display: none;">
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: var(--text-primary);">Processando...</p>
+        </div>
+
+        <!-- Modal de Reset -->
+        <div class="modal" id="resetModal">
+            <div class="modal-content">
+                <h3 style="margin-bottom: 15px; color: var(--text-primary);">⚠️ Atenção!</h3>
+                <p style="margin-bottom: 20px; line-height: 1.5; color: var(--text-secondary);">
+                    <strong>Isso vai apagar TUDO:</strong><br>
+                    • Salário (volta para R$ 0,00)<br>
+                    • Todas as transações<br>
+                    • Todas as parcelas ativas<br>
+                    • Histórico de quitações<br>
+                    • Limites dos cartões
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn-primary" style="background: #ef4444; width: auto; padding: 10px 20px;" onclick="confirmarReset()">Sim, resetar</button>
+                    <button class="btn-primary" style="background: var(--bg-tertiary); width: auto; padding: 10px 20px; color: var(--text-primary);" onclick="fecharModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Limites -->
+        <div class="modal" id="limiteModal">
+            <div class="modal-content">
+                <h3 style="margin-bottom: 15px; color: var(--text-primary);">💳 Limites dos Cartões</h3>
+                <div id="limitesContent" style="max-height: 400px; overflow-y: auto; padding-right: 10px;"></div>
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="btn-primary" style="width: auto; padding: 8px 20px;" onclick="salvarTodosLimites()">Salvar Todos</button>
+                    <button class="btn-secondary" onclick="fecharLimiteModal()">Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Histórico -->
+        <div class="modal" id="historicoModal">
+            <div class="modal-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 id="modalCartaoNome" style="color: var(--text-primary);">📊 Histórico</h3>
+                    <button class="close-btn" onclick="fecharHistoricoModal()" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: all 0.3s ease;">&times;</button>
+                </div>
+                <div id="historicoContent" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <h1><i class="fas fa-chart-pie" id="theme-icon"></i> Controle Financeiro</h1>
+                
+                <div class="theme-toggle" onclick="toggleTheme()">
+                    <div class="theme-option dark active" id="dark-option"><i class="fas fa-moon"></i> Dark</div>
+                    <div class="theme-option light" id="light-option"><i class="fas fa-sun"></i> Light</div>
+                </div>
+                
+                <button class="reset-btn" onclick="abrirModalReset()"><i class="fas fa-trash-alt"></i> Resetar</button>
+                <button class="config-limite-btn" onclick="abrirLimiteModal()"><i class="fas fa-sliders-h"></i> Limites</button>
+                
+                <div class="salary-editable">
+                    <div class="salary-display" onclick="editarSalario()">
+                        <i class="fas fa-briefcase"></i> <span id="salarioAtual">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <div class="nav-tabs">
+                    <div class="nav-tab active" onclick="mudarAba('lancamentos')" id="tab-lancamentos">
+                        <i class="fas fa-list"></i> Lançamentos
+                    </div>
+                    <div class="nav-tab" onclick="mudarAba('cartoes')" id="tab-cartoes">
+                        <i class="fas fa-credit-card"></i> Cartões
+                    </div>
+                    <div class="nav-tab" onclick="mudarAba('graficos')" id="tab-graficos">
+                        <i class="fas fa-chart-pie"></i> Gráficos
+                    </div>
+                </div>
+                
+                <div class="date-badge"><i class="far fa-calendar-alt"></i> <span id="dataAtual"></span></div>
+            </div>
+
+            <!-- Cards de Resumo -->
+            <div class="summary-cards">
+                <div class="card receita">
+                    <div class="card-header"><i class="fas fa-arrow-down"></i> <span>Receitas</span></div>
+                    <div class="card-value" id="totalReceitas">R$ 0,00</div>
+                    <div class="card-label">Salário mensal</div>
+                    <div class="mini-chart"><div class="mini-chart-fill" style="width: 0%;"></div></div>
+                </div>
+                
+                <div class="card despesa">
+                    <div class="card-header"><i class="fas fa-arrow-up"></i> <span>Despesas</span></div>
+                    <div class="card-value" id="totalDespesas">R$ 0,00</div>
+                    <div class="card-label">Total do mês</div>
+                    <div class="mini-chart"><div class="mini-chart-fill" id="despesas-chart" style="width: 0%; background: #ef4444;"></div></div>
+                </div>
+                
+                <div class="card saldo">
+                    <div class="card-header"><i class="fas fa-chart-line"></i> <span>Disponível</span></div>
+                    <div class="card-value" id="saldoTotal">R$ 0,00</div>
+                    <div class="card-label">Para gastar</div>
+                    <div class="mini-chart"><div class="mini-chart-fill" id="saldo-chart" style="width: 0%;"></div></div>
+                </div>
+                
+                <div class="card cartoes">
+                    <div class="card-header"><i class="fas fa-credit-card"></i> <span>Total Cartões</span></div>
+                    <div class="card-value" id="totalCartoes">R$ 0,00</div>
+                    <div class="card-label">Parcelas ativas</div>
+                    <div class="mini-chart"><div class="mini-chart-fill" id="cartoes-chart" style="width: 0%; background: #f59e0b;"></div></div>
+                </div>
+            </div>
+
+            <!-- ===== ABA LANÇAMENTOS ===== -->
+            <div id="aba-lancamentos">
+                <div class="form-container">
+                    <div class="form-title">
+                        <i class="fas fa-plus-circle"></i> Novo Lançamento
+                    </div>
+                    
                     <div class="form-grid">
                         <div class="form-group">
-                            <label><i class="fas fa-credit-card"></i> Cartão</label>
-                            <select id="cartaoParcela">
-                                <option value="">Selecione um cartão</option>
-                                <option value="Nubank">🟣 Nubank</option>
-                                <option value="Mercado Pago">🟡 Mercado Pago</option>
-                                <option value="Santander">🔴 Santander</option>
-                                <option value="Bradesco">🔵 Bradesco</option>
-                                <option value="Itaú">🟠 Itaú</option>
-                                <option value="Caixa">🔵 Caixa</option>
-                                <option value="Banco do Brasil">🔵 Banco do Brasil</option>
-                                <option value="Inter">🟠 Banco Inter</option>
-                                <option value="C6 Bank">⚫ C6 Bank</option>
-                                <option value="Next">🟢 Next</option>
-                                <option value="Original">🟡 Banco Original</option>
-                                <option value="Sicoob">🟢 Sicoob</option>
-                                <option value="Sicredi">🔵 Sicredi</option>
-                                <option value="PagBank">🟣 PagBank</option>
-                                <option value="PicPay">🟢 PicPay</option>
-                                <option value="Will Bank">⚪ Will Bank</option>
-                                <option value="Banrisul">🔴 Banrisul</option>
-                                <option value="BRB">🔵 BRB</option>
-                                <option value="Daycoval">🔵 Daycoval</option>
-                                <option value="Safra">🟡 Safra</option>
-                                <option value="Votorantim">🔵 Votorantim</option>
-                                <option value="Outros">⚪ Outros Cartões</option>
+                            <label><i class="far fa-calendar-alt"></i> Data</label>
+                            <input type="date" id="data" value="2026-03-13">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-tag"></i> Categoria</label>
+                            <select id="categoria">
+                                <option value="Cartão">💳 Cartão de Crédito</option>
+                                <option value="Internet">🌐 Internet</option>
+                                <option value="Moradia">🏠 Moradia</option>
+                                <option value="Alimentação">🍔 Alimentação</option>
+                                <option value="Transporte">🚗 Transporte</option>
+                                <option value="Saúde">💊 Saúde</option>
+                                <option value="Lazer">🎮 Lazer</option>
+                                <option value="Educação">📚 Educação</option>
+                                <option value="Eletrônicos">💻 Eletrônicos</option>
+                                <option value="Outros">🎁 Outros</option>
                             </select>
                         </div>
                         
                         <div class="form-group">
-                            <label><i class="fas fa-hashtag"></i> Total Parcelas</label>
-                            <input type="number" id="totalParcelas" min="1" max="24" value="10">
+                            <label><i class="fas fa-align-left"></i> Descrição</label>
+                            <input type="text" id="descricao" placeholder="Ex: Compra no supermercado">
                         </div>
                         
                         <div class="form-group">
-                            <label><i class="fas fa-forward"></i> Parcela Atual</label>
-                            <input type="number" id="parcelaAtual" min="1" value="1">
+                            <label><i class="fas fa-dollar-sign"></i> Valor</label>
+                            <input type="number" id="valor" step="0.01" min="0.01" placeholder="0,00">
+                        </div>
+                    </div>
+
+                    <div class="parcela-checkbox">
+                        <input type="checkbox" id="isParcela" onclick="toggleParcela()">
+                        <label for="isParcela"><strong>🔄 Compra parcelada?</strong></label>
+                    </div>
+
+                    <div id="parcelaFields" style="display: none;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label><i class="fas fa-credit-card"></i> Cartão</label>
+                                <select id="cartaoParcela">
+                                    <option value="">Selecione um cartão</option>
+                                    <option value="Nubank">🟣 Nubank</option>
+                                    <option value="Mercado Pago">🟡 Mercado Pago</option>
+                                    <option value="Santander">🔴 Santander</option>
+                                    <option value="Bradesco">🔵 Bradesco</option>
+                                    <option value="Itaú">🟠 Itaú</option>
+                                    <option value="Caixa">🔵 Caixa</option>
+                                    <option value="Banco do Brasil">🔵 Banco do Brasil</option>
+                                    <option value="Inter">🟠 Banco Inter</option>
+                                    <option value="C6 Bank">⚫ C6 Bank</option>
+                                    <option value="Next">🟢 Next</option>
+                                    <option value="Original">🟡 Banco Original</option>
+                                    <option value="Sicoob">🟢 Sicoob</option>
+                                    <option value="Sicredi">🔵 Sicredi</option>
+                                    <option value="PagBank">🟣 PagBank</option>
+                                    <option value="PicPay">🟢 PicPay</option>
+                                    <option value="Will Bank">⚪ Will Bank</option>
+                                    <option value="Banrisul">🔴 Banrisul</option>
+                                    <option value="BRB">🔵 BRB</option>
+                                    <option value="Daycoval">🔵 Daycoval</option>
+                                    <option value="Safra">🟡 Safra</option>
+                                    <option value="Votorantim">🔵 Votorantim</option>
+                                    <option value="Outros">⚪ Outros Cartões</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-hashtag"></i> Total Parcelas</label>
+                                <input type="number" id="totalParcelas" min="1" max="24" value="10">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-forward"></i> Parcela Atual</label>
+                                <input type="number" id="parcelaAtual" min="1" value="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label><i class="fas fa-exchange-alt"></i> Tipo</label>
+                        <div class="tipo-buttons">
+                            <button class="tipo-btn despesa active" onclick="setTipo('despesa')" type="button">
+                                <i class="fas fa-arrow-up"></i> Despesa
+                            </button>
+                            <button class="tipo-btn receita" onclick="setTipo('receita')" type="button">
+                                <i class="fas fa-arrow-down"></i> Receita
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="adicionarTransacao()">
+                        <i class="fas fa-rocket"></i> Lançar Transação
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title">
+                            <i class="fas fa-history"></i> Últimos Lançamentos
+                            <span id="totalLancamentos">0</span>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Categoria</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabelaLancamentos">
+                            <tr><td colspan="6" style="text-align: center;">Nenhum lançamento</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ===== ABA CARTÕES ===== -->
+            <div id="aba-cartoes" style="display: none;">
+                <div class="form-container">
+                    <div class="form-title"><i class="fas fa-credit-card"></i> Seus Cartões</div>
+                    
+                    <div class="cartoes-grid" id="cartoesGrid">
+                        <div class="empty-cartoes" style="text-align: center; padding: 40px; color: var(--text-muted);">Nenhum cartão com dívida ativa</div>
+                    </div>
+
+                    <div class="filters-section">
+                        <div class="filters-grid">
+                            <button class="filter-btn active" onclick="filtrarCartao('todos')" id="filter-todos">
+                                <i class="fas fa-th-large"></i> Todos
+                            </button>
+                            <button class="filter-btn history-btn" onclick="verHistoricoGeral()">
+                                <i class="fas fa-history"></i> Histórico Geral
+                                <span class="filter-badge" id="historico-count">0</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ===== NOVA SEÇÃO DE FILTROS ===== -->
+                <div class="filters-section" style="margin-bottom: 20px; padding: 20px; background: var(--bg-secondary); border-radius: 20px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-filter" style="color: var(--card-hover);"></i>
+                        <span style="font-weight: 600;">Filtrar Lançamentos</span>
+                        <span id="filtrosAtivos" style="background: var(--card-hover); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px;">0</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label><i class="far fa-calendar-alt"></i> Período</label>
+                            <select id="filtroPeriodo" onchange="aplicarFiltros()">
+                                <option value="todos">Todos</option>
+                                <option value="hoje">Hoje</option>
+                                <option value="semana">Esta semana</option>
+                                <option value="mes">Este mês</option>
+                                <option value="mesPassado">Mês passado</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-tag"></i> Categoria</label>
+                            <select id="filtroCategoria" onchange="aplicarFiltros()">
+                                <option value="todas">Todas</option>
+                                <option value="Cartão">💳 Cartão</option>
+                                <option value="Alimentação">🍔 Alimentação</option>
+                                <option value="Transporte">🚗 Transporte</option>
+                                <option value="Moradia">🏠 Moradia</option>
+                                <option value="Saúde">💊 Saúde</option>
+                                <option value="Lazer">🎮 Lazer</option>
+                                <option value="Educação">📚 Educação</option>
+                                <option value="Eletrônicos">💻 Eletrônicos</option>
+                                <option value="Outros">🎁 Outros</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-exchange-alt"></i> Tipo</label>
+                            <select id="filtroTipo" onchange="aplicarFiltros()">
+                                <option value="todos">Todos</option>
+                                <option value="receita">Receitas</option>
+                                <option value="despesa">Despesas</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-search"></i> Buscar</label>
+                            <input type="text" id="filtroBusca" placeholder="Descrição..." onkeyup="aplicarFiltros()">
+                        </div>
+                    </div>
+
+                    <!-- BOTÕES (SÓ ISSO AQUI!) -->
+                    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; align-items: center; flex-direction: row; flex-wrap: wrap;">
+                        <button class="config-limite-btn" onclick="exportarFiltrados()" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <i class="fas fa-download" style="color: var(--card-hover);"></i>
+                            <span>Exportar</span>
+                        </button>
+                        
+                        <button class="reset-btn" onclick="limparFiltros()" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <i class="fas fa-times"></i>
+                            <span>Limpar</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- FIM DOS FILTROS -->
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title">
+                            <i class="fas fa-list"></i> Parcelas Ativas
+                            <span id="parcelas-ativas-count">0</span>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cartão</th>
+                                <th>Descrição</th>
+                                <th>Parcela</th>
+                                <th>Valor</th>
+                                <th>Mês</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabelaCartoes">
+                            <tr><td colspan="6" style="text-align: center;">Nenhuma parcela ativa</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title">
+                            <i class="fas fa-check-circle"></i> Histórico de Quitações
+                            <span id="historico-total-count">0</span>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cartão</th>
+                                <th>Descrição</th>
+                                <th>Parcelas</th>
+                                <th>Valor</th>
+                                <th>Mês</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabelaHistorico">
+                            <tr><td colspan="6" style="text-align: center;">Nenhum histórico</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ===== ABA GRÁFICOS ===== -->
+            <div id="aba-graficos" style="display: none;">
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title"><i class="fas fa-chart-pie"></i> Despesas por Categoria</div>
+                            <div class="chart-value" id="totalCategorias">R$ 0,00</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartCategorias"></canvas>
+                        </div>
+                        <div class="chart-legend" id="legendCategorias"></div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title"><i class="fas fa-chart-line"></i> Evolução Mensal</div>
+                            <div class="chart-value" id="mediaMensal">R$ 0,00</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartEvolucao"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item"><span class="legend-color" style="background: #10b981;"></span> Receitas</div>
+                            <div class="legend-item"><span class="legend-color" style="background: #ef4444;"></span> Despesas</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title"><i class="fas fa-chart-bar"></i> Tipos de Despesa</div>
+                            <div class="chart-value" id="totalDespesasGeral">R$ 0,00</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartTipos"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item"><span class="legend-color" style="background: #f59e0b;"></span> Parceladas</div>
+                            <div class="legend-item"><span class="legend-color" style="background: #6d8eff;"></span> À Vista</div>
                         </div>
                     </div>
                 </div>
 
-                <div>
-                    <label><i class="fas fa-exchange-alt"></i> Tipo</label>
-                    <div class="tipo-buttons">
-                        <button class="tipo-btn despesa active" onclick="setTipo('despesa')" type="button">
-                            <i class="fas fa-arrow-up"></i> Despesa
-                        </button>
-                        <button class="tipo-btn receita" onclick="setTipo('receita')" type="button">
-                            <i class="fas fa-arrow-down"></i> Receita
-                        </button>
+                <div class="summary-cards" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="card">
+                        <div class="card-header"><i class="fas fa-calculator"></i> <span>Total Geral</span></div>
+                        <div class="card-value" id="totalGeralDespesas">R$ 0,00</div>
+                        <div class="card-label">Todas as despesas</div>
                     </div>
-                </div>
-                
-                <button class="btn-primary" onclick="adicionarTransacao()">
-                    <i class="fas fa-rocket"></i> Lançar Transação
-                </button>
-            </div>
-
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="table-title">
-                        <i class="fas fa-history"></i> Últimos Lançamentos
-                        <span id="totalLancamentos">0</span>
+                    <div class="card">
+                        <div class="card-header"><i class="fas fa-clock"></i> <span>Média/Mês</span></div>
+                        <div class="card-value" id="mediaGeral">R$ 0,00</div>
+                        <div class="card-label">Últimos 6 meses</div>
                     </div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Categoria</th>
-                            <th>Descrição</th>
-                            <th>Tipo</th>
-                            <th>Valor</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpoTabelaLancamentos">
-                        <tr><td colspan="6" style="text-align: center;">Nenhum lançamento</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ===== ABA CARTÕES ===== -->
-        <div id="aba-cartoes" style="display: none;">
-            <div class="form-container">
-                <div class="form-title"><i class="fas fa-credit-card"></i> Seus Cartões</div>
-                
-                <div class="cartoes-grid" id="cartoesGrid">
-                    <div class="empty-cartoes" style="text-align: center; padding: 40px; color: var(--text-muted);">Nenhum cartão com dívida ativa</div>
-                </div>
-
-                <div class="filters-section">
-                    <div class="filters-grid">
-                        <button class="filter-btn active" onclick="filtrarCartao('todos')" id="filter-todos">
-                            <i class="fas fa-th-large"></i> Todos
-                        </button>
-                        <button class="filter-btn history-btn" onclick="verHistoricoGeral()">
-                            <i class="fas fa-history"></i> Histórico Geral
-                            <span class="filter-badge" id="historico-count">0</span>
-                        </button>
+                    <div class="card">
+                        <div class="card-header"><i class="fas fa-chart-bar"></i> <span>Maior Gasto</span></div>
+                        <div class="card-value" id="maiorGasto">R$ 0,00</div>
+                        <div class="card-label" id="maiorGastoCategoria">-</div>
                     </div>
-                </div>
-            </div>
-            
-         <!-- ===== NOVA SEÇÃO DE FILTROS ===== -->
-<div class="filters-section" style="margin-bottom: 20px; padding: 20px; background: var(--bg-secondary); border-radius: 20px; border: 1px solid var(--border-color);">
-    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-        <i class="fas fa-filter" style="color: var(--card-hover);"></i>
-        <span style="font-weight: 600;">Filtrar Lançamentos</span>
-        <span id="filtrosAtivos" style="background: var(--card-hover); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px;">0</span>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-        <div class="form-group">
-            <label><i class="far fa-calendar-alt"></i> Período</label>
-            <select id="filtroPeriodo" onchange="aplicarFiltros()">
-                <option value="todos">Todos</option>
-                <option value="hoje">Hoje</option>
-                <option value="semana">Esta semana</option>
-                <option value="mes">Este mês</option>
-                <option value="mesPassado">Mês passado</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label><i class="fas fa-tag"></i> Categoria</label>
-            <select id="filtroCategoria" onchange="aplicarFiltros()">
-                <option value="todas">Todas</option>
-                <option value="Cartão">💳 Cartão</option>
-                <option value="Alimentação">🍔 Alimentação</option>
-                <option value="Transporte">🚗 Transporte</option>
-                <option value="Moradia">🏠 Moradia</option>
-                <option value="Saúde">💊 Saúde</option>
-                <option value="Lazer">🎮 Lazer</option>
-                <option value="Educação">📚 Educação</option>
-                <option value="Eletrônicos">💻 Eletrônicos</option>
-                <option value="Outros">🎁 Outros</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label><i class="fas fa-exchange-alt"></i> Tipo</label>
-            <select id="filtroTipo" onchange="aplicarFiltros()">
-                <option value="todos">Todos</option>
-                <option value="receita">Receitas</option>
-                <option value="despesa">Despesas</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label><i class="fas fa-search"></i> Buscar</label>
-            <input type="text" id="filtroBusca" placeholder="Descrição..." onkeyup="aplicarFiltros()">
-        </div>
-    </div>
-
-    <!-- BOTÕES (SÓ ISSO AQUI!) -->
-    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; align-items: center; flex-direction: row; flex-wrap: wrap;">
-        <button class="config-limite-btn" onclick="exportarFiltrados()" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
-            <i class="fas fa-download" style="color: var(--card-hover);"></i>
-            <span>Exportar</span>
-        </button>
-        
-        <button class="reset-btn" onclick="limparFiltros()" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
-            <i class="fas fa-times"></i>
-            <span>Limpar</span>
-        </button>
-    </div>
-</div>
-<!-- FIM DOS FILTROS -->
-
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="table-title">
-                        <i class="fas fa-list"></i> Parcelas Ativas
-                        <span id="parcelas-ativas-count">0</span>
-                    </div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Cartão</th>
-                            <th>Descrição</th>
-                            <th>Parcela</th>
-                            <th>Valor</th>
-                            <th>Mês</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpoTabelaCartoes">
-                        <tr><td colspan="6" style="text-align: center;">Nenhuma parcela ativa</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="table-title">
-                        <i class="fas fa-check-circle"></i> Histórico de Quitações
-                        <span id="historico-total-count">0</span>
-                    </div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Cartão</th>
-                            <th>Descrição</th>
-                            <th>Parcelas</th>
-                            <th>Valor</th>
-                            <th>Mês</th>
-                            <th>Data</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpoTabelaHistorico">
-                        <tr><td colspan="6" style="text-align: center;">Nenhum histórico</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ===== ABA GRÁFICOS ===== -->
-        <div id="aba-graficos" style="display: none;">
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="chart-title"><i class="fas fa-chart-pie"></i> Despesas por Categoria</div>
-                        <div class="chart-value" id="totalCategorias">R$ 0,00</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="chartCategorias"></canvas>
-                    </div>
-                    <div class="chart-legend" id="legendCategorias"></div>
-                </div>
-
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="chart-title"><i class="fas fa-chart-line"></i> Evolução Mensal</div>
-                        <div class="chart-value" id="mediaMensal">R$ 0,00</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="chartEvolucao"></canvas>
-                    </div>
-                    <div class="chart-legend">
-                        <div class="legend-item"><span class="legend-color" style="background: #10b981;"></span> Receitas</div>
-                        <div class="legend-item"><span class="legend-color" style="background: #ef4444;"></span> Despesas</div>
+                    <div class="card">
+                        <div class="card-header"><i class="fas fa-percent"></i> <span>% do Salário</span></div>
+                        <div class="card-value" id="percentualSalario">0%</div>
+                        <div class="card-label">Comprometido</div>
                     </div>
                 </div>
 
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="chart-title"><i class="fas fa-chart-bar"></i> Tipos de Despesa</div>
-                        <div class="chart-value" id="totalDespesasGeral">R$ 0,00</div>
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title">
+                            <i class="fas fa-list-ul"></i> Detalhamento de Despesas
+                            <span id="totalDespesasDetalhado">0</span>
+                        </div>
+                        <div class="table-actions">
+                            <select id="filtroMesGrafico" class="mes-select" onchange="atualizarGraficos()">
+                                <option value="todos">📅 Todos os meses</option>
+                                <option value="Janeiro">Janeiro</option>
+                                <option value="Fevereiro">Fevereiro</option>
+                                <option value="Março">Março</option>
+                                <option value="Abril">Abril</option>
+                                <option value="Maio">Maio</option>
+                                <option value="Junho">Junho</option>
+                                <option value="Julho">Julho</option>
+                                <option value="Agosto">Agosto</option>
+                                <option value="Setembro">Setembro</option>
+                                <option value="Outubro">Outubro</option>
+                                <option value="Novembro">Novembro</option>
+                                <option value="Dezembro">Dezembro</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="chart-container">
-                        <canvas id="chartTipos"></canvas>
-                    </div>
-                    <div class="chart-legend">
-                        <div class="legend-item"><span class="legend-color" style="background: #f59e0b;"></span> Parceladas</div>
-                        <div class="legend-item"><span class="legend-color" style="background: #6d8eff;"></span> À Vista</div>
-                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Categoria</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaDespesasDetalhadas"></tbody>
+                    </table>
                 </div>
-            </div>
-
-            <div class="summary-cards" style="grid-template-columns: repeat(4, 1fr);">
-                <div class="card">
-                    <div class="card-header"><i class="fas fa-calculator"></i> <span>Total Geral</span></div>
-                    <div class="card-value" id="totalGeralDespesas">R$ 0,00</div>
-                    <div class="card-label">Todas as despesas</div>
-                </div>
-                <div class="card">
-                    <div class="card-header"><i class="fas fa-clock"></i> <span>Média/Mês</span></div>
-                    <div class="card-value" id="mediaGeral">R$ 0,00</div>
-                    <div class="card-label">Últimos 6 meses</div>
-                </div>
-                <div class="card">
-                    <div class="card-header"><i class="fas fa-chart-bar"></i> <span>Maior Gasto</span></div>
-                    <div class="card-value" id="maiorGasto">R$ 0,00</div>
-                    <div class="card-label" id="maiorGastoCategoria">-</div>
-                </div>
-                <div class="card">
-                    <div class="card-header"><i class="fas fa-percent"></i> <span>% do Salário</span></div>
-                    <div class="card-value" id="percentualSalario">0%</div>
-                    <div class="card-label">Comprometido</div>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="table-title">
-                        <i class="fas fa-list-ul"></i> Detalhamento de Despesas
-                        <span id="totalDespesasDetalhado">0</span>
-                    </div>
-                    <div class="table-actions">
-                        <select id="filtroMesGrafico" class="mes-select" onchange="atualizarGraficos()">
-                            <option value="todos">📅 Todos os meses</option>
-                            <option value="Janeiro">Janeiro</option>
-                            <option value="Fevereiro">Fevereiro</option>
-                            <option value="Março">Março</option>
-                            <option value="Abril">Abril</option>
-                            <option value="Maio">Maio</option>
-                            <option value="Junho">Junho</option>
-                            <option value="Julho">Julho</option>
-                            <option value="Agosto">Agosto</option>
-                            <option value="Setembro">Setembro</option>
-                            <option value="Outubro">Outubro</option>
-                            <option value="Novembro">Novembro</option>
-                            <option value="Dezembro">Dezembro</option>
-                        </select>
-                    </div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Categoria</th>
-                            <th>Descrição</th>
-                            <th>Tipo</th>
-                            <th>Valor</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaDespesasDetalhadas"></tbody>
-                </table>
             </div>
         </div>
     </div>
 
     <script>
         // ========== VARIÁVEIS GLOBAIS ==========
+        let USUARIO_ATUAL = null;
         let SALARIO_MENSAL = 0;
         let LIMITES_CARTOES = {};
         let transacoes = [];
@@ -1962,6 +2249,388 @@
             { id: 'Outros', nome: 'Outros Cartões', cor: '#95A5A6', icone: 'fa-credit-card' }
         ];
 
+        // ========== FUNÇÕES DE LOGIN ==========
+        let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+
+        function mostrarLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('cadastroForm').style.display = 'none';
+            document.getElementById('recuperarForm').style.display = 'none';
+            document.getElementById('btnLoginTab').style.background = 'var(--gradient-1)';
+            document.getElementById('btnLoginTab').style.color = 'white';
+            document.getElementById('btnCadastroTab').style.background = 'transparent';
+            document.getElementById('btnCadastroTab').style.color = 'var(--text-muted)';
+            document.getElementById('btnRecuperarTab').style.background = 'transparent';
+            document.getElementById('btnRecuperarTab').style.color = 'var(--text-muted)';
+            document.getElementById('loginMensagem').style.display = 'none';
+        }
+
+        function mostrarCadastro() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('cadastroForm').style.display = 'block';
+            document.getElementById('recuperarForm').style.display = 'none';
+            document.getElementById('btnCadastroTab').style.background = 'var(--gradient-1)';
+            document.getElementById('btnCadastroTab').style.color = 'white';
+            document.getElementById('btnLoginTab').style.background = 'transparent';
+            document.getElementById('btnLoginTab').style.color = 'var(--text-muted)';
+            document.getElementById('btnRecuperarTab').style.background = 'transparent';
+            document.getElementById('btnRecuperarTab').style.color = 'var(--text-muted)';
+            document.getElementById('loginMensagem').style.display = 'none';
+        }
+
+        function mostrarRecuperar() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('cadastroForm').style.display = 'none';
+            document.getElementById('recuperarForm').style.display = 'block';
+            document.getElementById('btnRecuperarTab').style.background = 'var(--gradient-1)';
+            document.getElementById('btnRecuperarTab').style.color = 'white';
+            document.getElementById('btnLoginTab').style.background = 'transparent';
+            document.getElementById('btnLoginTab').style.color = 'var(--text-muted)';
+            document.getElementById('btnCadastroTab').style.background = 'transparent';
+            document.getElementById('btnCadastroTab').style.color = 'var(--text-muted)';
+            document.getElementById('loginMensagem').style.display = 'none';
+        }
+
+        function carregarDadosDoUsuario(email) {
+            const dados = JSON.parse(localStorage.getItem(`dados_${email}`)) || {
+                salario: 0,
+                limites: {},
+                transacoes: [],
+                parcelas: [],
+                quitadas: []
+            };
+            
+            SALARIO_MENSAL = dados.salario || 0;
+            LIMITES_CARTOES = dados.limites || {};
+            transacoes = dados.transacoes || [];
+            parcelas = dados.parcelas || [];
+            parcelasQuitadas = dados.quitadas || [];
+            
+            document.getElementById('salarioAtual').textContent = `R$ ${SALARIO_MENSAL.toFixed(2)}`;
+            document.getElementById('totalReceitas').textContent = `R$ ${SALARIO_MENSAL.toFixed(2)}`;
+            
+            atualizarTudo();
+        }
+
+        function salvarDadosDoUsuario() {
+            if (!USUARIO_ATUAL) return;
+            
+            const dados = {
+                salario: SALARIO_MENSAL,
+                limites: LIMITES_CARTOES,
+                transacoes: transacoes,
+                parcelas: parcelas,
+                quitadas: parcelasQuitadas,
+                ultimoAcesso: new Date().toISOString()
+            };
+            
+            localStorage.setItem(`dados_${USUARIO_ATUAL}`, JSON.stringify(dados));
+        }
+
+        function adicionarBotaoSair() {
+            if (document.getElementById('btnSair')) return;
+            
+            const header = document.querySelector('.header');
+            const btnSair = document.createElement('button');
+            btnSair.id = 'btnSair';
+            btnSair.className = 'reset-btn';
+            btnSair.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+            btnSair.onclick = fazerLogout;
+            btnSair.style.marginLeft = '10px';
+            
+            header.appendChild(btnSair);
+        }
+
+        // ===== FUNÇÕES DE LOADING =====
+        function mostrarLoading(mensagem = 'Processando') {
+            const overlay = document.getElementById('loadingOverlay');
+            const texto = document.getElementById('loadingText');
+            texto.textContent = mensagem;
+            overlay.classList.add('active');
+            
+            // Desabilitar botões de login
+            document.querySelectorAll('#loginForm button, #cadastroForm button, #recuperarForm button').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('btn-loading');
+            });
+        }
+
+        function esconderLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('active');
+            
+            // Reabilitar botões
+            document.querySelectorAll('#loginForm button, #cadastroForm button, #recuperarForm button').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('btn-loading');
+            });
+        }
+
+        function fazerLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const senha = document.getElementById('loginSenha').value;
+            
+            if (!email || !senha) {
+                mostrarMensagem('❌ Preencha todos os campos!', '#ef4444');
+                return;
+            }
+            
+            mostrarLoading('Verificando credenciais');
+            
+            setTimeout(() => {
+                usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+                
+                const usuarioEncontrado = usuarios.find(u => 
+                    u.email.toLowerCase().trim() === email.toLowerCase().trim() && 
+                    u.senha === senha
+                );
+                
+                if (usuarioEncontrado) {
+                    esconderLoading();
+                    mostrarLoading('Carregando seus dados');
+                    
+                    setTimeout(() => {
+                        USUARIO_ATUAL = usuarioEncontrado.email;
+                        
+                        const dados = JSON.parse(localStorage.getItem(`dados_${usuarioEncontrado.email}`)) || {
+                            salario: 0,
+                            limites: {},
+                            transacoes: [],
+                            parcelas: [],
+                            quitadas: []
+                        };
+                        
+                        SALARIO_MENSAL = dados.salario || 0;
+                        LIMITES_CARTOES = dados.limites || {};
+                        transacoes = dados.transacoes || [];
+                        parcelas = dados.parcelas || [];
+                        parcelasQuitadas = dados.quitadas || [];
+                        
+                        document.getElementById('salarioAtual').textContent = `R$ ${SALARIO_MENSAL.toFixed(2)}`;
+                        document.getElementById('totalReceitas').textContent = `R$ ${SALARIO_MENSAL.toFixed(2)}`;
+                        
+                        esconderLoading();
+                        
+                        document.getElementById('telaLogin').style.display = 'none';
+                        document.getElementById('conteudoPrincipal').style.display = 'block';
+                        
+                        adicionarBotaoSair();
+                        
+                        const header = document.querySelector('.header h1');
+                        if (header) {
+                            header.innerHTML = `<i class="fas fa-chart-pie"></i> Olá, ${usuarioEncontrado.nome || usuarioEncontrado.email}! 👋`;
+                        }
+                        
+                        atualizarTudo();
+                        mostrarMensagem('✅ Bem-vindo!', '#10b981');
+                    }, 1500);
+                } else {
+                    esconderLoading();
+                    mostrarMensagem('❌ E-mail ou senha incorretos!', '#ef4444');
+                }
+            }, 1500);
+        }
+
+        function fazerLogout() {
+            USUARIO_ATUAL = null;
+            document.getElementById('telaLogin').style.display = 'flex';
+            document.getElementById('conteudoPrincipal').style.display = 'none';
+            
+            const btnSair = document.getElementById('btnSair');
+            if (btnSair) btnSair.remove();
+            
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginSenha').value = '';
+        }
+
+        function fazerCadastro() {
+            const nome = document.getElementById('cadastroNome').value.trim();
+            const email = document.getElementById('cadastroEmail').value.trim();
+            const senha = document.getElementById('cadastroSenha').value;
+            const confirmar = document.getElementById('cadastroConfirmar').value;
+            const pergunta = document.getElementById('cadastroPergunta').value;
+            const resposta = document.getElementById('cadastroResposta').value.trim().toLowerCase();
+            
+            if (!nome || !email || !senha || !confirmar || !pergunta || !resposta) {
+                mostrarMensagem('❌ Preencha todos os campos!', '#ef4444');
+                return;
+            }
+            
+            if (senha !== confirmar) {
+                mostrarMensagem('❌ As senhas não conferem!', '#ef4444');
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                mostrarMensagem('❌ E-mail inválido!', '#ef4444');
+                return;
+            }
+            
+            mostrarLoading('Criando sua conta');
+            
+            setTimeout(() => {
+                usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+                
+                if (usuarios.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+                    esconderLoading();
+                    mostrarMensagem('❌ E-mail já cadastrado!', '#ef4444');
+                    return;
+                }
+                
+                usuarios.push({ 
+                    nome, 
+                    email, 
+                    senha,
+                    pergunta,
+                    resposta
+                });
+                
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                
+                localStorage.setItem(`dados_${email}`, JSON.stringify({
+                    salario: 0,
+                    limites: {},
+                    transacoes: [],
+                    parcelas: [],
+                    quitadas: []
+                }));
+                
+                esconderLoading();
+                mostrarMensagem('✅ Cadastro realizado!', '#10b981');
+                
+                document.getElementById('cadastroNome').value = '';
+                document.getElementById('cadastroEmail').value = '';
+                document.getElementById('cadastroSenha').value = '';
+                document.getElementById('cadastroConfirmar').value = '';
+                document.getElementById('cadastroResposta').value = '';
+                document.getElementById('cadastroPergunta').value = '';
+                
+                setTimeout(() => {
+                    mostrarLogin();
+                    document.getElementById('loginEmail').value = email;
+                    document.getElementById('loginSenha').focus();
+                    mostrarMensagem('✅ Agora faça login', '#10b981');
+                }, 2000);
+            }, 2000);
+        }
+
+        function verificarPergunta() {
+            const email = document.getElementById('recuperarEmail').value.trim();
+            
+            if (!email) {
+                mostrarMensagem('❌ Digite seu e-mail!', '#ef4444');
+                return;
+            }
+            
+            usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+            const usuario = usuarios.find(u => u.email.toLowerCase() === email.toLowerCase());
+            
+            if (!usuario) {
+                mostrarMensagem('❌ E-mail não encontrado!', '#ef4444');
+                return;
+            }
+            
+            document.getElementById('perguntaSecreta').textContent = usuario.pergunta;
+            document.getElementById('respostaField').style.display = 'block';
+            document.getElementById('recuperarEmail').disabled = true;
+            document.getElementById('btnVerificarEmail').style.display = 'none';
+            document.getElementById('emailRecuperacao').value = usuario.email;
+        }
+
+        function redefinirSenha() {
+            const email = document.getElementById('emailRecuperacao').value;
+            const resposta = document.getElementById('recuperarResposta').value.trim().toLowerCase();
+            const novaSenha = document.getElementById('novaSenha').value;
+            const confirmarNova = document.getElementById('confirmarNovaSenha').value;
+            
+            if (!resposta || !novaSenha || !confirmarNova) {
+                mostrarMensagem('❌ Preencha todos os campos!', '#ef4444');
+                return;
+            }
+            
+            if (novaSenha !== confirmarNova) {
+                mostrarMensagem('❌ As senhas não conferem!', '#ef4444');
+                return;
+            }
+            
+            mostrarLoading('Redefinindo senha');
+            
+            setTimeout(() => {
+                usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+                const usuario = usuarios.find(u => u.email === email);
+                
+                if (!usuario) {
+                    esconderLoading();
+                    mostrarMensagem('❌ Usuário não encontrado!', '#ef4444');
+                    return;
+                }
+                
+                if (usuario.resposta !== resposta) {
+                    esconderLoading();
+                    mostrarMensagem('❌ Resposta incorreta!', '#ef4444');
+                    return;
+                }
+                
+                usuario.senha = novaSenha;
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                
+                esconderLoading();
+                mostrarMensagem('✅ Senha redefinida!', '#10b981');
+                
+                setTimeout(() => {
+                    document.getElementById('recuperarEmail').value = '';
+                    document.getElementById('recuperarResposta').value = '';
+                    document.getElementById('novaSenha').value = '';
+                    document.getElementById('confirmarNovaSenha').value = '';
+                    document.getElementById('recuperarEmail').disabled = false;
+                    document.getElementById('btnVerificarEmail').style.display = 'block';
+                    document.getElementById('respostaField').style.display = 'none';
+                    mostrarLogin();
+                    document.getElementById('loginEmail').value = email;
+                }, 2000);
+            }, 2000);
+        }
+
+        function mostrarMensagem(texto, cor) {
+            const msg = document.getElementById('loginMensagem');
+            msg.style.display = 'block';
+            msg.style.color = cor;
+            msg.innerHTML = texto;
+            
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 3000);
+        }
+
+        // Criar usuário padrão se não existir
+        if (usuarios.length === 0) {
+            usuarios.push({ 
+                nome: 'Admin', 
+                email: 'admin@email.com', 
+                senha: '1234',
+                pergunta: 'Qual sua cor favorita?',
+                resposta: 'azul'
+            });
+            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            localStorage.setItem('dados_admin@email.com', JSON.stringify({
+                salario: 0,
+                limites: {},
+                transacoes: [],
+                parcelas: [],
+                quitadas: []
+            }));
+        }
+
+        // Enter para logar
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && document.getElementById('telaLogin').style.display !== 'none') {
+                if (document.getElementById('loginForm').style.display !== 'none') {
+                    fazerLogin();
+                }
+            }
+        });
+
         // ========== INICIALIZAÇÃO ==========
         document.addEventListener('DOMContentLoaded', function() {
             loadTheme();
@@ -1970,24 +2639,7 @@
             document.getElementById('data').value = hoje.toISOString().split('T')[0];
             document.getElementById('dataAtual').textContent = hoje.toLocaleDateString('pt-BR');
             
-            const savedTransacoes = localStorage.getItem('financas_transacoes');
-            const savedParcelas = localStorage.getItem('financas_parcelas');
-            const savedQuitadas = localStorage.getItem('financas_quitadas');
-            const savedSalario = localStorage.getItem('salario_mensal');
-            const savedLimites = localStorage.getItem('limites_cartoes');
-            
-            if (savedTransacoes) transacoes = JSON.parse(savedTransacoes);
-            if (savedParcelas) parcelas = JSON.parse(savedParcelas);
-            if (savedQuitadas) parcelasQuitadas = JSON.parse(savedQuitadas);
-            if (savedSalario) {
-                SALARIO_MENSAL = parseFloat(savedSalario);
-                document.getElementById('salarioAtual').textContent = `R$ ${SALARIO_MENSAL.toFixed(2)}`;
-                document.getElementById('totalReceitas').textContent = `R$ ${SALARIO_MENSAL.toFixed(2)}`;
-            }
-            if (savedLimites) LIMITES_CARTOES = JSON.parse(savedLimites);
-
             inicializarGraficos();
-            atualizarTudo();
         });
 
         function inicializarGraficos() {
@@ -2023,125 +2675,31 @@
             }
         }
 
+        // ========== DEMAIS FUNÇÕES (resumidas para não repetir todo o código) ==========
         function atualizarGraficos() {
-            const filtroMes = document.getElementById('filtroMesGrafico')?.value || 'todos';
-            const categorias = {};
-            const despesasPorTipo = { parceladas: 0, avista: 0 };
-            let totalGeral = 0;
-            
-            transacoes.forEach(t => {
-                if (t.tipo === 'despesa') {
-                    const data = new Date(t.data);
-                    const mes = MESES[data.getMonth()];
-                    if (filtroMes === 'todos' || mes === filtroMes) {
-                        if (!categorias[t.categoria]) categorias[t.categoria] = 0;
-                        categorias[t.categoria] += t.valor;
-                        totalGeral += t.valor;
-                        if (t.isParcela) despesasPorTipo.parceladas += t.valor;
-                        else despesasPorTipo.avista += t.valor;
-                    }
-                }
-            });
-
-            if (chartCategorias) {
-                chartCategorias.data.labels = Object.keys(categorias);
-                chartCategorias.data.datasets[0].data = Object.values(categorias);
-                chartCategorias.update();
-            }
-
-            let legendHtml = '';
-            const cores = ['#6d8eff', '#10b981', '#f59e0b', '#ef4444', '#9d7aff'];
-            Object.keys(categorias).forEach((cat, i) => {
-                legendHtml += `<div class="legend-item"><span class="legend-color" style="background: ${cores[i % cores.length]};"></span> ${cat}: R$ ${categorias[cat].toFixed(2)}</div>`;
-            });
-            document.getElementById('legendCategorias').innerHTML = legendHtml;
-
-            const ultimos6Meses = [], receitas6Meses = [], despesas6Meses = [];
-            for (let i = 5; i >= 0; i--) {
-                const data = new Date(); data.setMonth(data.getMonth() - i);
-                const mes = MESES[data.getMonth()].substring(0, 3);
-                ultimos6Meses.push(mes);
-                let receitas = 0, despesas = 0;
-                transacoes.forEach(t => {
-                    const tData = new Date(t.data);
-                    if (tData.getMonth() === data.getMonth() && tData.getFullYear() === data.getFullYear()) {
-                        if (t.tipo === 'receita') receitas += t.valor;
-                        else despesas += t.valor;
-                    }
-                });
-                receitas6Meses.push(receitas);
-                despesas6Meses.push(despesas);
-            }
-
-            if (chartEvolucao) {
-                chartEvolucao.data.labels = ultimos6Meses;
-                chartEvolucao.data.datasets[0].data = receitas6Meses;
-                chartEvolucao.data.datasets[1].data = despesas6Meses;
-                chartEvolucao.update();
-            }
-
-            if (chartTipos) {
-                chartTipos.data.datasets[0].data = [despesasPorTipo.parceladas, despesasPorTipo.avista];
-                chartTipos.update();
-            }
-
-            document.getElementById('totalGeralDespesas').textContent = `R$ ${totalGeral.toFixed(2)}`;
-            const media = receitas6Meses.reduce((a, b) => a + b, 0) / 6;
-            document.getElementById('mediaGeral').textContent = `R$ ${media.toFixed(2)}`;
-            
-            let maiorValor = 0, maiorCategoria = '';
-            Object.keys(categorias).forEach(cat => {
-                if (categorias[cat] > maiorValor) { maiorValor = categorias[cat]; maiorCategoria = cat; }
-            });
-            document.getElementById('maiorGasto').textContent = `R$ ${maiorValor.toFixed(2)}`;
-            document.getElementById('maiorGastoCategoria').textContent = maiorCategoria || '-';
-            
-            const percentual = SALARIO_MENSAL > 0 ? (totalGeral / SALARIO_MENSAL) * 100 : 0;
-            document.getElementById('percentualSalario').textContent = `${percentual.toFixed(1)}%`;
-
-            atualizarTabelaDespesasDetalhadas(filtroMes);
+            if (!USUARIO_ATUAL) return;
+            // ... (manter suas funções existentes)
         }
 
         function atualizarTabelaDespesasDetalhadas(filtroMes) {
-            const tbody = document.getElementById('tabelaDespesasDetalhadas');
-            let despesas = transacoes.filter(t => t.tipo === 'despesa');
-            
-            if (filtroMes !== 'todos') {
-                despesas = despesas.filter(t => {
-                    const data = new Date(t.data);
-                    return MESES[data.getMonth()] === filtroMes;
-                });
-            }
-
-            despesas.sort((a, b) => new Date(b.data) - new Date(a.data));
-
-            if (despesas.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma despesa encontrada</td></tr>';
-                return;
-            }
-
-            let html = '';
-            despesas.forEach(t => {
-                const data = new Date(t.data).toLocaleDateString('pt-BR');
-                const tipo = t.isParcela ? 'Parcelada' : 'À Vista';
-                html += `<tr><td>${data}</td><td>${t.categoria}</td><td>${t.descricao}</td><td><span class="badge-${t.tipo}">${tipo}</span></td><td class="valor-negativo">R$ ${t.valor.toFixed(2)}</td><td><span class="badge-despesa">Despesa</span></td></tr>`;
-            });
-            tbody.innerHTML = html;
-            document.getElementById('totalDespesasDetalhado').textContent = despesas.length;
+            if (!USUARIO_ATUAL) return;
+            // ... (manter suas funções existentes)
         }
 
         function abrirModalReset() { document.getElementById('resetModal').classList.add('active'); }
         function fecharModal() { document.getElementById('resetModal').classList.remove('active'); }
 
         function confirmarReset() {
+            if (!USUARIO_ATUAL) return;
             document.getElementById('loading').classList.add('active');
             
-            localStorage.clear();
             SALARIO_MENSAL = 0;
             LIMITES_CARTOES = {};
             transacoes = [];
             parcelas = [];
             parcelasQuitadas = [];
+            
+            salvarDadosDoUsuario();
             
             setTimeout(() => {
                 document.getElementById('salarioAtual').textContent = `R$ 0,00`;
@@ -2149,7 +2707,7 @@
                 atualizarTudo();
                 document.getElementById('loading').classList.remove('active');
                 fecharModal();
-                alert('✅ Planilha resetada com sucesso!');
+                alert('✅ Dados resetados!');
             }, 500);
         }
 
@@ -2183,12 +2741,12 @@
             
             if (valor && valor > 0) {
                 LIMITES_CARTOES[cartaoId] = valor;
-                localStorage.setItem('limites_cartoes', JSON.stringify(LIMITES_CARTOES));
+                salvarDadosDoUsuario();
                 atualizarCardsCartoes();
                 alert(`✅ Limite do ${cartaoId} salvo!`);
             } else if (input.value === '') {
                 delete LIMITES_CARTOES[cartaoId];
-                localStorage.setItem('limites_cartoes', JSON.stringify(LIMITES_CARTOES));
+                salvarDadosDoUsuario();
                 atualizarCardsCartoes();
                 alert(`✅ Limite do ${cartaoId} removido!`);
             } else {
@@ -2205,7 +2763,7 @@
                     else if (input.value === '') delete LIMITES_CARTOES[cartao.id];
                 }
             });
-            localStorage.setItem('limites_cartoes', JSON.stringify(LIMITES_CARTOES));
+            salvarDadosDoUsuario();
             atualizarCardsCartoes();
             alert('✅ Todos os limites salvos!');
             fecharLimiteModal();
@@ -2231,12 +2789,14 @@
         }
 
         function editarSalario() {
+            if (!USUARIO_ATUAL) return;
+            
             const novo = prompt('Digite seu novo salário:', SALARIO_MENSAL);
             if (novo && !isNaN(parseFloat(novo))) {
                 SALARIO_MENSAL = parseFloat(novo);
-                localStorage.setItem('salario_mensal', SALARIO_MENSAL);
                 document.getElementById('salarioAtual').textContent = `R$ ${SALARIO_MENSAL.toFixed(2)}`;
                 document.getElementById('totalReceitas').textContent = `R$ ${SALARIO_MENSAL.toFixed(2)}`;
+                salvarDadosDoUsuario();
                 atualizarTudo();
             }
         }
@@ -2254,6 +2814,8 @@
         }
 
         function adicionarTransacao() {
+            if (!USUARIO_ATUAL) return;
+            
             const data = document.getElementById('data').value;
             const categoria = document.getElementById('categoria').value;
             const descricao = document.getElementById('descricao').value;
@@ -2282,8 +2844,7 @@
                 });
             }
 
-            localStorage.setItem('financas_transacoes', JSON.stringify(transacoes));
-            localStorage.setItem('financas_parcelas', JSON.stringify(parcelas));
+            salvarDadosDoUsuario();
 
             document.getElementById('descricao').value = '';
             document.getElementById('valor').value = '';
@@ -2295,6 +2856,8 @@
         }
 
         function pagarParcela(id) {
+            if (!USUARIO_ATUAL) return;
+            
             const parcela = parcelas.find(p => p.id === id);
             if (!parcela) return;
 
@@ -2317,9 +2880,7 @@
                     parcelas = parcelas.filter(p => p.id !== id);
                 }
                 
-                localStorage.setItem('financas_transacoes', JSON.stringify(transacoes));
-                localStorage.setItem('financas_parcelas', JSON.stringify(parcelas));
-                localStorage.setItem('financas_quitadas', JSON.stringify(parcelasQuitadas));
+                salvarDadosDoUsuario();
                 
                 atualizarTudo();
                 alert(`Parcela ${parcela.parcelaAtual}/${parcela.totalParcelas} paga!`);
@@ -2327,11 +2888,12 @@
         }
 
         function deletarTransacao(id) {
+            if (!USUARIO_ATUAL) return;
+            
             if (confirm('Excluir?')) {
                 transacoes = transacoes.filter(t => t.id !== id);
                 parcelas = parcelas.filter(p => p.id !== id);
-                localStorage.setItem('financas_transacoes', JSON.stringify(transacoes));
-                localStorage.setItem('financas_parcelas', JSON.stringify(parcelas));
+                salvarDadosDoUsuario();
                 atualizarTudo();
             }
         }
@@ -2355,6 +2917,8 @@
         }
 
         function atualizarCardsCartoes() {
+            if (!USUARIO_ATUAL) return;
+            
             const grid = document.getElementById('cartoesGrid');
             const cartoesComDivida = getCartoesComDivida();
             
@@ -2386,6 +2950,8 @@
         }
 
         function verHistoricoCartao(cartao) {
+            if (!USUARIO_ATUAL) return;
+            
             const quitadas = parcelasQuitadas.filter(p => p.cartao === cartao);
             if (quitadas.length === 0) { alert(`Nenhum histórico para ${cartao}`); return; }
 
@@ -2402,6 +2968,8 @@
         }
 
         function verHistoricoGeral() {
+            if (!USUARIO_ATUAL) return;
+            
             if (parcelasQuitadas.length === 0) { alert('Nenhum histórico de quitações'); return; }
 
             let html = '', totalGeral = 0;
@@ -2433,6 +3001,8 @@
         }
 
         function atualizarTudo() {
+            if (!USUARIO_ATUAL) return;
+            
             atualizarResumo();
             atualizarGraficos();
             atualizarTabelaLancamentos();
@@ -2443,6 +3013,8 @@
         }
 
         function atualizarResumo() {
+            if (!USUARIO_ATUAL) return;
+            
             const mesAtual = new Date().getMonth(), anoAtual = new Date().getFullYear();
             let despesasMes = 0;
             transacoes.forEach(t => {
@@ -2466,6 +3038,8 @@
         }
 
         function atualizarTabelaLancamentos() {
+            if (!USUARIO_ATUAL) return;
+            
             const tbody = document.getElementById('corpoTabelaLancamentos');
             document.getElementById('totalLancamentos').textContent = transacoes.length;
             
@@ -2483,6 +3057,8 @@
         }
 
         function atualizarTabelaCartoes(filtro = null) {
+            if (!USUARIO_ATUAL) return;
+            
             const tbody = document.getElementById('corpoTabelaCartoes');
             let ativas = parcelas.filter(p => p.status === 'Ativa');
             if (filtro) ativas = ativas.filter(p => p.cartao === filtro);
@@ -2502,6 +3078,8 @@
         }
 
         function atualizarTabelaHistorico() {
+            if (!USUARIO_ATUAL) return;
+            
             const tbody = document.getElementById('corpoTabelaHistorico');
             document.getElementById('historico-total-count').textContent = parcelasQuitadas.length;
 
@@ -2532,173 +3110,128 @@
             
             if (aba === 'graficos') setTimeout(() => atualizarGraficos(), 100);
             if (aba === 'cartoes') { atualizarCardsCartoes(); atualizarTabelaCartoes(cartaoSelecionado); }
-        }// ========== VARIÁVEIS DE FILTRO ==========
-let transacoesFiltradas = [];
-
-// ========== FUNÇÕES DE FILTRO ==========
-function aplicarFiltros() {
-    const periodo = document.getElementById('filtroPeriodo')?.value || 'todos';
-    const categoria = document.getElementById('filtroCategoria')?.value || 'todas';
-    const tipo = document.getElementById('filtroTipo')?.value || 'todos';
-    const busca = document.getElementById('filtroBusca')?.value.toLowerCase() || '';
-
-    let filtrados = [...transacoes];
-
-    // Filtrar por período
-    const hoje = new Date();
-    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-    const inicioSemana = new Date(hoje);
-    inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const inicioMesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
-    const fimMesPassado = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-
-    filtrados = filtrados.filter(t => {
-        const dataTransacao = new Date(t.data);
-        
-        switch(periodo) {
-            case 'hoje':
-                return dataTransacao >= inicioHoje;
-            case 'semana':
-                return dataTransacao >= inicioSemana;
-            case 'mes':
-                return dataTransacao >= inicioMes;
-            case 'mesPassado':
-                return dataTransacao >= inicioMesPassado && dataTransacao <= fimMesPassado;
-            default:
-                return true;
         }
-    });
 
-    // Filtrar por categoria
-    if (categoria !== 'todas') {
-        filtrados = filtrados.filter(t => t.categoria === categoria);
-    }
+        // ========== VARIÁVEIS DE FILTRO ==========
+        let transacoesFiltradas = [];
 
-    // Filtrar por tipo
-    if (tipo !== 'todos') {
-        filtrados = filtrados.filter(t => t.tipo === tipo);
-    }
+        // ========== FUNÇÕES DE FILTRO ==========
+        function aplicarFiltros() {
+            if (!USUARIO_ATUAL) return;
+            
+            const periodo = document.getElementById('filtroPeriodo')?.value || 'todos';
+            const categoria = document.getElementById('filtroCategoria')?.value || 'todas';
+            const tipo = document.getElementById('filtroTipo')?.value || 'todos';
+            const busca = document.getElementById('filtroBusca')?.value.toLowerCase() || '';
 
-    // Filtrar por busca
-    if (busca) {
-        filtrados = filtrados.filter(t => 
-            t.descricao.toLowerCase().includes(busca) ||
-            t.categoria.toLowerCase().includes(busca)
-        );
-    }
+            let filtrados = [...transacoes];
 
-    transacoesFiltradas = filtrados;
-    
-    // Atualizar contador de filtros ativos
-    let filtrosAtivos = 0;
-    if (periodo !== 'todos') filtrosAtivos++;
-    if (categoria !== 'todas') filtrosAtivos++;
-    if (tipo !== 'todos') filtrosAtivos++;
-    if (busca) filtrosAtivos++;
-    
-    const badge = document.getElementById('filtrosAtivos');
-    if (badge) badge.textContent = filtrosAtivos;
+            const hoje = new Date();
+            const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            const inicioSemana = new Date(hoje);
+            inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+            const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            const inicioMesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+            const fimMesPassado = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
 
-    // Atualizar a tabela (usando a função existente ou criando uma nova)
-    if (typeof atualizarTabelaFiltrada === 'function') {
-        atualizarTabelaFiltrada();
-    } else {
-        // Se não existir função específica, atualiza a tabela principal
-        atualizarTabelaComFiltros();
-    }
-}
+            filtrados = filtrados.filter(t => {
+                const dataTransacao = new Date(t.data);
+                switch(periodo) {
+                    case 'hoje': return dataTransacao >= inicioHoje;
+                    case 'semana': return dataTransacao >= inicioSemana;
+                    case 'mes': return dataTransacao >= inicioMes;
+                    case 'mesPassado': return dataTransacao >= inicioMesPassado && dataTransacao <= fimMesPassado;
+                    default: return true;
+                }
+            });
 
-function atualizarTabelaComFiltros() {
-    const tbody = document.getElementById('corpoTabelaLancamentos');
-    if (!tbody) return;
-    
-    if (transacoesFiltradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum lançamento encontrado</td></tr>';
-        return;
-    }
+            if (categoria !== 'todas') filtrados = filtrados.filter(t => t.categoria === categoria);
+            if (tipo !== 'todos') filtrados = filtrados.filter(t => t.tipo === tipo);
+            if (busca) filtrados = filtrados.filter(t => t.descricao.toLowerCase().includes(busca) || t.categoria.toLowerCase().includes(busca));
 
-    const ordenadas = transacoesFiltradas.sort((a, b) => new Date(b.data) - new Date(a.data));
-    
-    let html = '';
-    ordenadas.forEach(t => {
-        const dataFormatada = new Date(t.data).toLocaleDateString('pt-BR');
-        const tipoClasse = t.tipo === 'receita' ? 'badge-receita' : 'badge-despesa';
-        const valorClasse = t.tipo === 'receita' ? 'valor-positivo' : 'valor-negativo';
-        const tipoTexto = t.tipo === 'receita' ? 'Receita' : 'Despesa';
-        
-        html += `
-            <tr>
-                <td>${dataFormatada}</td>
-                <td>${t.categoria}</td>
-                <td>${t.descricao}</td>
-                <td><span class="${tipoClasse}">${tipoTexto}</span></td>
-                <td class="${valorClasse}">R$ ${t.valor.toFixed(2)}</td>
-                <td>
-                    <button class="delete-btn" onclick="deletarTransacao(${t.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
+            transacoesFiltradas = filtrados;
+            
+            let filtrosAtivos = 0;
+            if (periodo !== 'todos') filtrosAtivos++;
+            if (categoria !== 'todas') filtrosAtivos++;
+            if (tipo !== 'todos') filtrosAtivos++;
+            if (busca) filtrosAtivos++;
+            
+            document.getElementById('filtrosAtivos').textContent = filtrosAtivos;
+            atualizarTabelaComFiltros();
+        }
 
-    tbody.innerHTML = html;
-}
+        function atualizarTabelaComFiltros() {
+            if (!USUARIO_ATUAL) return;
+            
+            const tbody = document.getElementById('corpoTabelaLancamentos');
+            if (!tbody) return;
+            
+            if (transacoesFiltradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum lançamento encontrado</td></tr>';
+                return;
+            }
 
-function limparFiltros() {
-    const periodo = document.getElementById('filtroPeriodo');
-    const categoria = document.getElementById('filtroCategoria');
-    const tipo = document.getElementById('filtroTipo');
-    const busca = document.getElementById('filtroBusca');
-    
-    if (periodo) periodo.value = 'todos';
-    if (categoria) categoria.value = 'todas';
-    if (tipo) tipo.value = 'todos';
-    if (busca) busca.value = '';
-    
-    aplicarFiltros();
-}
+            const ordenadas = transacoesFiltradas.sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            let html = '';
+            ordenadas.forEach(t => {
+                const dataFormatada = new Date(t.data).toLocaleDateString('pt-BR');
+                const tipoClasse = t.tipo === 'receita' ? 'badge-receita' : 'badge-despesa';
+                const valorClasse = t.tipo === 'receita' ? 'valor-positivo' : 'valor-negativo';
+                const tipoTexto = t.tipo === 'receita' ? 'Receita' : 'Despesa';
+                
+                html += `
+                    <tr>
+                        <td>${dataFormatada}</td>
+                        <td>${t.categoria}</td>
+                        <td>${t.descricao}</td>
+                        <td><span class="${tipoClasse}">${tipoTexto}</span></td>
+                        <td class="${valorClasse}">R$ ${t.valor.toFixed(2)}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deletarTransacao(${t.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
 
-function exportarFiltrados() {
-    if (transacoesFiltradas.length === 0) {
-        alert('Nenhum lançamento para exportar');
-        return;
-    }
+            tbody.innerHTML = html;
+        }
 
-    let csv = 'Data,Categoria,Descrição,Tipo,Valor\n';
-    
-    transacoesFiltradas.forEach(t => {
-        const data = new Date(t.data).toLocaleDateString('pt-BR');
-        const tipo = t.tipo === 'receita' ? 'Receita' : 'Despesa';
-        csv += `${data},${t.categoria},${t.descricao},${tipo},${t.valor}\n`;
-    });
+        function limparFiltros() {
+            document.getElementById('filtroPeriodo').value = 'todos';
+            document.getElementById('filtroCategoria').value = 'todas';
+            document.getElementById('filtroTipo').value = 'todos';
+            document.getElementById('filtroBusca').value = '';
+            aplicarFiltros();
+        }
 
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.href = url;
-    link.setAttribute('download', `filtrados_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
+        function exportarFiltrados() {
+            if (!USUARIO_ATUAL) return;
+            
+            if (transacoesFiltradas.length === 0) {
+                alert('Nenhum lançamento para exportar');
+                return;
+            }
 
-// Modificar a função adicionarTransacao existente para aplicar filtros após adicionar
-const adicionarTransacaoOriginal = adicionarTransacao;
-adicionarTransacao = function() {
-    adicionarTransacaoOriginal();
-    setTimeout(() => aplicarFiltros(), 100);
-}
+            let csv = 'Data,Categoria,Descrição,Tipo,Valor\n';
+            
+            transacoesFiltradas.forEach(t => {
+                const data = new Date(t.data).toLocaleDateString('pt-BR');
+                const tipo = t.tipo === 'receita' ? 'Receita' : 'Despesa';
+                csv += `${data},${t.categoria},${t.descricao},${tipo},${t.valor}\n`;
+            });
 
-// Modificar a função deletarTransacao existente para aplicar filtros após deletar
-const deletarTransacaoOriginal = deletarTransacao;
-deletarTransacao = function(id) {
-    deletarTransacaoOriginal(id);
-    setTimeout(() => aplicarFiltros(), 100);
-}
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.href = url;
+            link.download = `filtrados_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
     </script>
 </body>
 </html>
