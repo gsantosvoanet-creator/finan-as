@@ -1534,6 +1534,72 @@
                 margin-left: 0;
             }
         }
+        // ========== FUNÇÕES DE TEMA (5 TEMAS) ==========
+function mudarTema(tema) {
+    // Remove todas as classes de tema
+    document.body.classList.remove('theme-aurora', 'theme-sunset', 'theme-ocean', 'theme-forest', 'theme-berry');
+    // Adiciona o tema selecionado
+    document.body.classList.add(`theme-${tema}`);
+    // Salva no localStorage
+    localStorage.setItem('tema_preferido', tema);
+    
+    // Atualiza o botão ativo
+    document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.theme-${tema}-btn`).classList.add('active');
+    
+    // Atualiza os gráficos se existirem
+    if (window.chartCategorias) chartCategorias.update();
+    if (window.chartEvolucao) chartEvolucao.update();
+    if (window.chartTipos) chartTipos.update();
+}
+
+function mostrarSeletorTemas() {
+    const seletor = document.getElementById('themeSelector');
+    seletor.classList.toggle('active');
+    // Esconde automaticamente após 3 segundos
+    setTimeout(() => {
+        if (!seletor.matches(':hover')) seletor.classList.remove('active');
+    }, 3000);
+}
+
+function adicionarBotaoTemas() {
+    // Adiciona botão de temas no header
+    if (document.getElementById('btnTemas')) return;
+    
+    const header = document.querySelector('.header');
+    if (header) {
+        const btnTemas = document.createElement('button');
+        btnTemas.id = 'btnTemas';
+        btnTemas.className = 'config-limite-btn';
+        btnTemas.innerHTML = '<i class="fas fa-palette"></i> Temas';
+        btnTemas.onclick = mostrarSeletorTemas;
+        btnTemas.style.marginLeft = '10px';
+        
+        // Coloca antes do salário
+        const salaryDiv = document.querySelector('.salary-editable');
+        if (salaryDiv) {
+            salaryDiv.parentNode.insertBefore(btnTemas, salaryDiv);
+        } else {
+            header.appendChild(btnTemas);
+        }
+    }
+}
+
+// Carregar tema salvo ao iniciar
+function carregarTemaSalvo() {
+    const temaSalvo = localStorage.getItem('tema_preferido');
+    if (temaSalvo) {
+        mudarTema(temaSalvo);
+    } else {
+        // Tema padrão aurora
+        document.body.classList.add('theme-aurora');
+    }
+}
+
+// Chamar após o login
+// Adicione esta linha dentro da função de login, após carregar os dados:
+// carregarTemaSalvo();
+// adicionarBotaoTemas();
     </style>
 </head>
 <body class="dark-mode">
@@ -1716,6 +1782,15 @@
         <div class="progress-loading">
             <div class="progress-bar-fill"></div>
         </div>
+    </div>
+
+        <!-- SELETOR DE TEMAS FLUTUANTE -->
+    <div class="theme-selector" id="themeSelector">
+        <div class="theme-btn theme-aurora-btn active" onclick="mudarTema('aurora')" title="Aurora (roxo/azul)"></div>
+        <div class="theme-btn theme-sunset-btn" onclick="mudarTema('sunset')" title="Sunset (laranja/rosa)"></div>
+        <div class="theme-btn theme-ocean-btn" onclick="mudarTema('ocean')" title="Ocean (azul/turquesa)"></div>
+        <div class="theme-btn theme-forest-btn" onclick="mudarTema('forest')" title="Forest (verde)"></div>
+        <div class="theme-btn theme-berry-btn" onclick="mudarTema('berry')" title="Berry (roxo/rosa)"></div>
     </div>
 
     <!-- CONTEÚDO PRINCIPAL -->
@@ -2423,6 +2498,11 @@
                         
                         atualizarTudo();
                         mostrarMensagem('✅ Bem-vindo!', '#10b981');
+
+                         // Carregar tema salvo e adicionar botão de temas
+                        carregarTemaSalvo();
+                        adicionarBotaoTemas();
+                        
                     }, 1500);
                 } else {
                     esconderLoading();
@@ -2640,6 +2720,10 @@
             document.getElementById('dataAtual').textContent = hoje.toLocaleDateString('pt-BR');
             
             inicializarGraficos();
+
+            // Carregar tema salvo e adicionar botão de temas
+                    carregarTemaSalvo();
+                     adicionarBotaoTemas();
         });
 
         function inicializarGraficos() {
@@ -2675,15 +2759,131 @@
             }
         }
 
-        // ========== DEMAIS FUNÇÕES (resumidas para não repetir todo o código) ==========
+               // ========== FUNÇÕES DE GRÁFICOS (COMPLETAS) ==========
         function atualizarGraficos() {
             if (!USUARIO_ATUAL) return;
-            // ... (manter suas funções existentes)
+            
+            const mesFiltro = document.getElementById('filtroMesGrafico')?.value || 'todos';
+            let despesas = transacoes.filter(t => t.tipo === 'despesa');
+            
+            // Filtrar por mês se necessário
+            if (mesFiltro !== 'todos') {
+                despesas = despesas.filter(t => MESES[new Date(t.data).getMonth()] === mesFiltro);
+            }
+            
+            // ===== GRÁFICO DE CATEGORIAS =====
+            const categorias = {};
+            despesas.forEach(d => {
+                categorias[d.categoria] = (categorias[d.categoria] || 0) + d.valor;
+            });
+            
+            const categoriasLabels = Object.keys(categorias);
+            const categoriasValores = Object.values(categorias);
+            const cores = ['#6d8eff', '#10b981', '#f59e0b', '#ef4444', '#9d7aff', '#ec489a', '#14b8a6'];
+            
+            if (chartCategorias) {
+                chartCategorias.data.labels = categoriasLabels;
+                chartCategorias.data.datasets[0].data = categoriasValores;
+                chartCategorias.update();
+            }
+            
+            // Legendas de categorias
+            const legendDiv = document.getElementById('legendCategorias');
+            if (legendDiv) {
+                legendDiv.innerHTML = categoriasLabels.map((cat, i) => 
+                    `<div class="legend-item"><span class="legend-color" style="background: ${cores[i % cores.length]}"></span> ${cat}: R$ ${categoriasValores[i].toFixed(2)}</div>`
+                ).join('');
+            }
+            
+            // ===== GRÁFICO DE EVOLUÇÃO MENSAL =====
+            const ultimos6Meses = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                ultimos6Meses.push(MESES[d.getMonth()]);
+            }
+            
+            const receitasPorMes = ultimos6Meses.map(mes => {
+                return transacoes.filter(t => t.tipo === 'receita' && MESES[new Date(t.data).getMonth()] === mes).reduce((s, t) => s + t.valor, 0);
+            });
+            
+            const despesasPorMes = ultimos6Meses.map(mes => {
+                return transacoes.filter(t => t.tipo === 'despesa' && MESES[new Date(t.data).getMonth()] === mes).reduce((s, t) => s + t.valor, 0);
+            });
+            
+            if (chartEvolucao) {
+                chartEvolucao.data.labels = ultimos6Meses;
+                chartEvolucao.data.datasets[0].data = receitasPorMes;
+                chartEvolucao.data.datasets[1].data = despesasPorMes;
+                chartEvolucao.update();
+            }
+            
+            // ===== GRÁFICO DE TIPOS (PARCELADAS VS À VISTA) =====
+            const parceladas = parcelas.reduce((s, p) => s + p.valor, 0);
+            const aVista = transacoes.filter(t => t.tipo === 'despesa' && !parcelas.find(p => p.id === t.id)).reduce((s, t) => s + t.valor, 0);
+            
+            if (chartTipos) {
+                chartTipos.data.datasets[0].data = [parceladas, aVista];
+                chartTipos.update();
+            }
+            
+            // ===== TOTAIS E ESTATÍSTICAS =====
+            const totalDespesas = despesas.reduce((s, d) => s + d.valor, 0);
+            document.getElementById('totalCategorias').textContent = `R$ ${totalDespesas.toFixed(2)}`;
+            document.getElementById('totalDespesasGeral').textContent = `R$ ${totalDespesas.toFixed(2)}`;
+            document.getElementById('totalGeralDespesas').textContent = `R$ ${totalDespesas.toFixed(2)}`;
+            
+            const media = totalDespesas / Math.max(1, ultimos6Meses.length);
+            document.getElementById('mediaGeral').textContent = `R$ ${media.toFixed(2)}`;
+            document.getElementById('mediaMensal').textContent = `R$ ${media.toFixed(2)}`;
+            
+            const maior = [...despesas].sort((a, b) => b.valor - a.valor)[0];
+            document.getElementById('maiorGasto').textContent = maior ? `R$ ${maior.valor.toFixed(2)}` : 'R$ 0,00';
+            if (maior) {
+                document.getElementById('maiorGastoCategoria').textContent = maior.categoria;
+            }
+            
+            const percentual = SALARIO_MENSAL > 0 ? (totalDespesas / SALARIO_MENSAL) * 100 : 0;
+            document.getElementById('percentualSalario').textContent = `${percentual.toFixed(1)}%`;
+            
+            // Tabela detalhada
+            atualizarTabelaDespesasDetalhadas(mesFiltro);
         }
 
         function atualizarTabelaDespesasDetalhadas(filtroMes) {
             if (!USUARIO_ATUAL) return;
-            // ... (manter suas funções existentes)
+            
+            const tbody = document.getElementById('tabelaDespesasDetalhadas');
+            if (!tbody) return;
+            
+            let despesas = transacoes.filter(t => t.tipo === 'despesa');
+            
+            if (filtroMes && filtroMes !== 'todos') {
+                despesas = despesas.filter(t => MESES[new Date(t.data).getMonth()] === filtroMes);
+            }
+            
+            document.getElementById('totalDespesasDetalhado').textContent = despesas.length;
+            
+            if (despesas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma despesa encontrada</td></tr>';
+                return;
+            }
+            
+            const ordenadas = [...despesas].sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            tbody.innerHTML = ordenadas.map(d => {
+                const isParcelada = parcelas.some(p => p.id === d.id);
+                return `
+                    <tr>
+                        <td>${new Date(d.data).toLocaleDateString('pt-BR')}</td>
+                        <td>${d.categoria}</td>
+                        <td>${d.descricao}</td>
+                        <td><span class="badge-despesa">Despesa</span></td>
+                        <td class="valor-negativo">R$ ${d.valor.toFixed(2)}</td>
+                        <td>${isParcelada ? '<span class="badge-parcela">Parcelada</span>' : '<span class="badge-quitado">À Vista</span>'}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function abrirModalReset() { document.getElementById('resetModal').classList.add('active'); }
