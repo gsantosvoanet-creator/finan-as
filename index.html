@@ -1600,9 +1600,72 @@ function carregarTemaSalvo() {
 // Adicione esta linha dentro da função de login, após carregar os dados:
 // carregarTemaSalvo();
 // adicionarBotaoTemas();
+        /* ===== TEMAS ADICIONAIS (5 CORES) ===== */
+        body.theme-aurora {
+            --card-hover: #6d8eff;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glow-color: rgba(109, 142, 255, 0.5);
+            --glow-color-strong: rgba(109, 142, 255, 0.8);
+        }
+        body.theme-sunset {
+            --card-hover: #f97316;
+            --gradient-1: linear-gradient(135deg, #f97316 0%, #db2777 100%);
+            --glow-color: rgba(249, 115, 22, 0.5);
+            --glow-color-strong: rgba(219, 39, 119, 0.8);
+        }
+        body.theme-ocean {
+            --card-hover: #3b82f6;
+            --gradient-1: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            --glow-color: rgba(6, 182, 212, 0.5);
+            --glow-color-strong: rgba(59, 130, 246, 0.8);
+        }
+        body.theme-forest {
+            --card-hover: #10b981;
+            --gradient-1: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --glow-color: rgba(16, 185, 129, 0.5);
+            --glow-color-strong: rgba(16, 185, 129, 0.8);
+        }
+        body.theme-berry {
+            --card-hover: #a855f7;
+            --gradient-1: linear-gradient(135deg, #a855f7 0%, #ec489a 100%);
+            --glow-color: rgba(168, 85, 247, 0.5);
+            --glow-color-strong: rgba(236, 72, 153, 0.8);
+        }
+
+        /* ===== SELETOR DE TEMAS ===== */
+        .theme-selector {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--bg-secondary);
+            border-radius: 50px;
+            padding: 8px 16px;
+            display: none;
+            gap: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+        .theme-selector.active { display: flex; }
+        .theme-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .theme-btn:hover { transform: scale(1.1); }
+        .theme-btn.active { border-color: white; box-shadow: 0 0 10px currentColor; }
+        .theme-aurora-btn { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .theme-sunset-btn { background: linear-gradient(135deg, #f97316, #db2777); }
+        .theme-ocean-btn { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+        .theme-forest-btn { background: linear-gradient(135deg, #10b981, #059669); }
+        .theme-berry-btn { background: linear-gradient(135deg, #a855f7, #ec489a); }
     </style>
 </head>
-<body class="dark-mode">
+<body class="dark-mode theme-aurora">
     <!-- ===== TELA DE LOGIN ===== -->
     <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%); z-index: 99999; display: flex; justify-content: center; align-items: center;">
         <div style="background: var(--bg-secondary); border-radius: 30px; padding: 40px 30px; width: 90%; max-width: 420px; border: 1px solid var(--border-color); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);">
@@ -2502,7 +2565,7 @@ function carregarTemaSalvo() {
                          // Carregar tema salvo e adicionar botão de temas
                         carregarTemaSalvo();
                         adicionarBotaoTemas();
-                        
+
                     }, 1500);
                 } else {
                     esconderLoading();
@@ -3431,6 +3494,54 @@ function carregarTemaSalvo() {
             link.href = url;
             link.download = `filtrados_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
+        }
+                // ========== FUNÇÕES DE TEMA ==========
+        function mudarTema(tema) {
+            document.body.classList.remove('theme-aurora', 'theme-sunset', 'theme-ocean', 'theme-forest', 'theme-berry');
+            document.body.classList.add(`theme-${tema}`);
+            localStorage.setItem('tema_preferido', tema);
+            
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.theme-${tema}-btn`).classList.add('active');
+            
+            if (window.chartCategorias) chartCategorias.update();
+            if (window.chartEvolucao) chartEvolucao.update();
+            if (window.chartTipos) chartTipos.update();
+        }
+                function mostrarSeletorTemas() {
+            const seletor = document.getElementById('themeSelector');
+            seletor.classList.toggle('active');
+            setTimeout(() => {
+                if (!seletor.matches(':hover')) seletor.classList.remove('active');
+            }, 3000);
+        }
+                function adicionarBotaoTemas() {
+            if (document.getElementById('btnTemas')) return;
+            
+            const header = document.querySelector('.header');
+            if (header) {
+                const btnTemas = document.createElement('button');
+                btnTemas.id = 'btnTemas';
+                btnTemas.className = 'config-limite-btn';
+                btnTemas.innerHTML = '<i class="fas fa-palette"></i> Temas';
+                btnTemas.onclick = mostrarSeletorTemas;
+                btnTemas.style.marginLeft = '10px';
+                
+                const salaryDiv = document.querySelector('.salary-editable');
+                if (salaryDiv) {
+                    salaryDiv.parentNode.insertBefore(btnTemas, salaryDiv);
+                } else {
+                    header.appendChild(btnTemas);
+                }
+            }
+        }
+                function carregarTemaSalvo() {
+            const temaSalvo = localStorage.getItem('tema_preferido');
+            if (temaSalvo) {
+                mudarTema(temaSalvo);
+            } else {
+                document.body.classList.add('theme-aurora');
+            }
         }
     </script>
 </body>
